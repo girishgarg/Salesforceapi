@@ -6,11 +6,13 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -31,7 +33,7 @@ public class AuthorizeController {
 	     // @RequestParam("state") UUID state,
 	      HttpServletRequest request) throws ClientProtocolException, IOException,Exception  { 
 		
-		System.out.println(code);
+		//System.out.println(code);
 		
 		HttpSession session = request.getSession();
 	    
@@ -65,7 +67,7 @@ public class AuthorizeController {
 		  String accesstoken = jsonObject.getString("access_token");
 		  String instanceurl = jsonObject.getString("instance_url");
 		  meetingget(accesstoken,instanceurl);
-		  System.out.println(accesstoken);
+		 // System.out.println(accesstoken);
 	}
 	
 	
@@ -86,12 +88,86 @@ public class AuthorizeController {
 		    System.out.println(line);
 		    builder.append(line);
 		  }
+		  String s = builder.toString();
+		 
+		  JSONObject  jsonObject1 = new JSONObject(s);
+			  JSONArray name1 = jsonObject1.getJSONArray("records");
+			  String n = name1.toString();
+			  String meetingid = "";
+			  for (int index = 1; index < n.length()-1;
+					  index++) {
+					       char aChar = n.charAt(index);
+					       meetingid = meetingid + aChar;	  
+			  }
+			 //JSONObject n = name1.toJSONObject(name1);
+			 JSONObject d = new JSONObject(meetingid);
+			 JSONObject att = d.getJSONObject("attributes");
+			 String url = att.getString("url");
+			// System.out.println("url is "+url);
+		  createmeeting(code, instanceurl);
+		  deletemeeting(code,instanceurl,url);
 		  
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 		}
 	}
 	
+	//to create a new event 
+	public void createmeeting(String code,String instanceurl) throws ClientProtocolException, IOException,Exception  {
+		try{
+		DefaultHttpClient httpClient = new DefaultHttpClient();
+		StringBuilder   builder = new StringBuilder();
+		HttpPost postRequest = new HttpPost(instanceurl+
+				"/services/data/v20.0/sobjects/Event/");
+			
+		postRequest.addHeader("Authorization", "Bearer "+code);
+		postRequest.addHeader("Content-Type","application/json");
+		JSONObject json = new JSONObject();
+		  json.put("Subject", "sadafssa");
+		  json.put("Description", "fcdsfvdsd");
+		  json.put("ActivityDateTime", "2017-09-18T14:00:00Z");
+		  json.put("DurationInMinutes", "54");
+		  
+		   StringEntity se = new StringEntity(json.toString());
+		  postRequest.setEntity(se);
+		HttpResponse response = httpClient.execute(postRequest);
+		
+
+		BufferedReader rd = new BufferedReader (new InputStreamReader(response.getEntity().getContent()));
+		  String line = "";
+		  System.out.println("-----meeting created-----");
+		  while ((line = rd.readLine()) != null) {
+		    System.out.println(line);
+		    builder.append(line);
+		  }
+		 
+		  
+		 
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		}
+		  
+	}
+	
+	//meeting delete
+	public void deletemeeting(String code,String instanceurl,String url) throws ClientProtocolException, IOException,Exception  {
+		try{
+		DefaultHttpClient httpClient = new DefaultHttpClient();
+		StringBuilder   builder = new StringBuilder();
+		HttpDelete postRequest = new HttpDelete(instanceurl+url);
+			
+		postRequest.addHeader("Authorization", "Bearer "+code);
+		HttpResponse response = httpClient.execute(postRequest);
+		//BufferedReader rd = new BufferedReader (new InputStreamReader(response.getEntity().getContent()));
+		  String line = "";
+		  System.out.println("-----meeting deleted-----");
+		  //beacuse there is no response
+		 
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		}
+		  
+	}
 	
 	
 }
